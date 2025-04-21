@@ -67,7 +67,7 @@ explorer.exe index.html
 ---
 
 
-## 🧩 How It Works
+## 🧩 How to Play
 
 1. Clicks **Start Quiz** to start the game.
 2. App fetches random cocktail data from the CocktailDB API

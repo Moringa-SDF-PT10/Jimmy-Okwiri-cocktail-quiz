@@ -65,7 +65,8 @@ async function loadQuestion() {
       image: drink.strDrinkThumb,
       correctIngredients: getIngredients(drink),
       glass: drink.strGlass,
-      category: drink.strCategory
+      category: drink.strCategory,
+      alcoholic: drink.strAlcoholic
     };
 
     questionCount++;
@@ -78,22 +79,47 @@ async function loadQuestion() {
 
 function generateQuestion() {
   cocktailImage.src = currentQuestion.image;
-  const allIngredients = [...currentQuestion.correctIngredients];
-  while (allIngredients.length < 4) {
-    allIngredients.push(getRandomIngredient());
-  }
 
-  const questionType = Math.random() < 0.5 ? 'ingredient' : 'glass';
+  const questionTypes = ['ingredient', 'glass', 'image', 'alcoholic'];
+  const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
 
   if (questionType === 'ingredient') {
+    const allIngredients = [...currentQuestion.correctIngredients];
+    while (allIngredients.length < 4) {
+      allIngredients.push(getRandomIngredient());
+    }
     questionText.textContent = `Which of the following is NOT in ${currentQuestion.name}?`;
     renderOptions(allIngredients, currentQuestion.correctIngredients);
-  } else {
+  } else if (questionType === 'glass') {
     const glassOptions = [currentQuestion.glass, ...generateFakeGlasses()];
     questionText.textContent = `What glass is used for ${currentQuestion.name}?`;
     renderOptions(glassOptions, [currentQuestion.glass]);
+  } else if (questionType === 'image') {
+    questionText.textContent = `Which cocktail is shown in the image?`;
+    fetchMultipleCocktails(currentQuestion.name);
+    return;
+  } else if (questionType === 'alcoholic') {
+    const options = ['Alcoholic', 'Non alcoholic'];
+    questionText.textContent = `Is ${currentQuestion.name} alcoholic or non-alcoholic?`;
+    renderOptions(options, [currentQuestion.alcoholic]);
   }
 
+  startTimer();
+  loadingScreen.style.display = 'none';
+  quizScreen.classList.remove('hidden');
+}
+
+async function fetchMultipleCocktails(correctName) {
+  const names = [correctName];
+  while (names.length < 4) {
+    const response = await fetch('https://www.thecocktaildb.com/api/json/v1/1/random.php');
+    const data = await response.json();
+    const drinkName = data.drinks[0].strDrink;
+    if (!names.includes(drinkName)) {
+      names.push(drinkName);
+    }
+  }
+  renderOptions(names, [correctName]);
   startTimer();
   loadingScreen.style.display = 'none';
   quizScreen.classList.remove('hidden');
@@ -121,7 +147,7 @@ function handleAnswer(button, isCorrect) {
     score++;
   } else {
     button.classList.add('wrong');
-    const correctBtn = [...buttons].find(btn => currentQuestion.correctIngredients.includes(btn.textContent) || btn.textContent === currentQuestion.glass);
+    const correctBtn = [...buttons].find(btn => currentQuestion.correctIngredients.includes(btn.textContent) || btn.textContent === currentQuestion.glass || btn.textContent === currentQuestion.name || btn.textContent === currentQuestion.alcoholic);
     if (correctBtn) correctBtn.classList.add('correct');
   }
 
@@ -162,7 +188,7 @@ function showHint() {
   let removed = 0;
 
   options.forEach(option => {
-    if (removed < 2 && !currentQuestion.correctIngredients.includes(option.textContent) && option.textContent !== currentQuestion.glass) {
+    if (removed < 2 && !currentQuestion.correctIngredients.includes(option.textContent) && option.textContent !== currentQuestion.glass && option.textContent !== currentQuestion.name && option.textContent !== currentQuestion.alcoholic) {
       option.style.visibility = 'hidden';
       removed++;
     }
