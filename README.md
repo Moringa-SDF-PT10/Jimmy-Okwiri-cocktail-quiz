@@ -75,7 +75,7 @@ explorer.exe index.html
    - Guess the **ingredient**
    - Guess the **glass type**
    - Guess the **cocktail name**
-   - Guess if the grink is **Alcoholic** or **Non-Alcoholic**
+   - Guess if the drink is **Alcoholic** or **Non-Alcoholic**
 4. Player selects answers within a 15-second timer or the it will automatically move to the next question.
 5. Player may use **hint** which removes 2 wrong answers after being used leaving 2 or 3 answers to choose from.
 6. Final score , high score and total time taken are displayed on completion
