@@ -82,10 +82,18 @@ explorer.exe index.html
 
 ## 📸 Screenshots
 
-| Start Screen | Quiz Screen | Results |
-|--------------|-------------|---------|
-| ![](./assets/start-screen.png) | ![](./assets/quiz-screen.png) | ![](./assets/results.png) |
+|Start Screen| 
+|--------------|
+|![](./assets/start-screen.png)|
 
+|Quiz Screen |
+|-------------|
+|![](./assets/quiz-screen.png)|
+
+
+|Results|
+|---------|
+|![](./assets/results.png) |
 ---
 
 ## 🚀 Live Demo
