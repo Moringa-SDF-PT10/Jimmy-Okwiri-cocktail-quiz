@@ -91,7 +91,7 @@ explorer.exe index.html
 |![](./assets/quiz-screen.png)|
 
 
-|Results Scre|
+|Results|
 |---------|
 |![](./assets/results.png) |
 ---
