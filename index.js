@@ -1,310 +1,221 @@
-//API
-const API_URL = "https://www.thecocktaildb.com/api/json/v1/1";
+const startBtn = document.getElementById('start-button');
+const loadingScreen = document.getElementById('loading-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const resultScreen = document.getElementById('result-screen');
+const questionText = document.getElementById('question');
+const optionContainer = document.getElementById('option-container');
+const cocktailImage = document.getElementById('cocktail-image');
+const scoreDisplay = document.getElementById('game-score');
+const timerDisplay = document.getElementById('game-timer');
+const hintBtn = document.getElementById('hint-button');
+const nextBtn = document.getElementById('next-button');
+const restartBtn = document.getElementById('restart-button');
+const menuBtn = document.getElementById('menu-button');
+const totalScore = document.getElementById('total-score');
+const totalTimeTaken = document.getElementById('total-time-taken');
+const highScoreDisplay = document.getElementById('high-score');
 
-// DOM Elements
-const homeScreen = document.getElementById("home-screen");
-const startScreenImage = document.getElementById("start-screen-image");
-const startButton = document.getElementById("start-button");
-const loadingScreen = document.getElementById("loading-screen");
-const loadingText = document.getElementById("loading-text");
-const quizScreen = document.getElementById("quiz-screen");
-const gameTimer= document.getElementById("game-timer");
-const gameScore = document.getElementById("game-score");
-const cocktailImage = document.getElementById("cocktail-image");
-const hintButton = document.getElementById("hint-button");
-const nextButton = document.getElementById("next-button");
-const resultScreen = document.getElementById("result-screen");
-const totalScore = document.getElementById("total-score");
-const totalTimeTaken = document.getElementById("total-time-taken");
-const restartButton = document.getElementById("restart-button");
-const menuButton = document.getElementById("menu-button");
-
-const existingOptions = document.querySelector(".options-container");
-
-// Glass Types
-const GLASS_TYPES = [
-    "Martini Glass",
-    "Old Fashioned Glass (Rocks Glass)", 
-    "Copper Mug",
-    "Margarita Glass",
-    "Wine Glass",
-    "Hurricane Glass",
-    "Beer Glass (Pint Glass)",
-    "Highball Glass", 
-    "Collins Glass",
-    "Shot Glass",
-    "Champagne Flute",
-    "Coupe Glass"
-  ];
-
-let cocktails = [];
-let currentQuestionIndex = 0;
+let currentQuestion = {};
+let currentOptions = [];
 let score = 0;
+let timePerQuestion = 15;
 let timer;
-let secondsElapsed = 0;
-let timeRemaining = 15;
 let totalTime = 0;
-let quizStartTime;
-let questions = [];
-let selectedMode = "api";
 let hintUsed = false;
+let questionCount = 0;
+const totalQuestions = 10;
 
-function setupQuiz() {
-startButton.addEventListener("click", startQuiz);
-hintButton.addEventListener("click", showHint);
-nextButton.addEventListener("click", nextQuestion);
-restartButton.addEventListener("click", restartQuiz);
-menuButton.addEventListener("click", goToMainMenu);
+startBtn.addEventListener('click', startQuiz);
+nextBtn.addEventListener('click', handleNextQuestion);
+hintBtn.addEventListener('click', showHint);
+restartBtn.addEventListener('click', restartQuiz);
+menuBtn.addEventListener('click', () => {
+  resultScreen.classList.add('hidden');
+  document.getElementById('home-screen').classList.remove('hidden');
+});
+
+function startQuiz() {
+  score = 0;
+  totalTime = 0;
+  questionCount = 0;
+  document.getElementById('home-screen').classList.add('hidden');
+  loadingScreen.style.display = 'flex';
+  loadQuestion();
 }
 
-// calling the questions
-document.addEventListener("DOMContentLoaded", setupQuiz);
-
-async function loadQuestions() {
-    questions = await generateCocktailQuestion();
+async function loadQuestion() {
+  if (questionCount >= totalQuestions) {
+    showResults();
+    return;
   }
 
-// Start Quiz
-function startQuiz() {
-    homeScreen.style.display = "none";
-    loadingScreen.style.display = "block";
-    
-    // Reset variables
-    currentQuestionIndex = 0;
-    score = 0;
-    hintUsed = false;
-    timeRemaining = 15;
-    totalTime = 0;
-    
-    quizStartTime = Date.now();
-    
-    loadQuestions().then(() => {
-      loadingScreen.style.display = "none";
-      quizScreen.style.display = "block";
-      startTimer();
-      showQuestion();
-    });
+  clearInterval(timer);
+  resetState();
+  loadingScreen.style.display = 'flex';
+  quizScreen.classList.add('hidden');
+  hintUsed = false;
+
+  try {
+    const response = await fetch('https://www.thecocktaildb.com/api/json/v1/1/random.php');
+    const data = await response.json();
+    const drink = data.drinks[0];
+
+    currentQuestion = {
+      name: drink.strDrink,
+      image: drink.strDrinkThumb,
+      correctIngredients: getIngredients(drink),
+      glass: drink.strGlass,
+      category: drink.strCategory
+    };
+
+    questionCount++;
+    generateQuestion();
+  } catch (error) {
+    questionText.textContent = 'Failed to load question.';
+    console.error(error);
+  }
+}
+
+function generateQuestion() {
+  cocktailImage.src = currentQuestion.image;
+  const allIngredients = [...currentQuestion.correctIngredients];
+  while (allIngredients.length < 4) {
+    allIngredients.push(getRandomIngredient());
   }
 
-  function showQuestion() {
-    const question = questions[currentQuestionIndex];
-    if (!question) {
-      endQuiz();
-      return;
-    }
+  const questionType = Math.random() < 0.5 ? 'ingredient' : 'glass';
 
-    // Reset hint
-      hintUsed = false;
-      timeRemaining = 15;
-      updateTimer();
-      startTimer();
-      question.options.forEach(optionText => {
-        optionButton.textContent = optionText;
-        optionButton.addEventListener("click", () => selectAnswer(optionText));
-        optionContainer.appendChild(optionButton);
-      });
-    
-      // Append everything
-      quizScreen.insertBefore(questionElement, document.querySelector(".quiz-footer"));
-      quizScreen.insertBefore(optionsContainer, document.querySelector(".quiz-footer"));
-
-      document.getElementById("hint-button").addEventListener("click", showHint);
-      document.getElementById("next-button").addEventListener("click", nextQuestion);
-    }
-
-  async function fetchRandomCocktail() {
-    const res = await fetch(`${API_URL}/random.php`);
-    const data = await res.json();
-    return data.drinks[0];
+  if (questionType === 'ingredient') {
+    questionText.textContent = `Which of the following is NOT in ${currentQuestion.name}?`;
+    renderOptions(allIngredients, currentQuestion.correctIngredients);
+  } else {
+    const glassOptions = [currentQuestion.glass, ...generateFakeGlasses()];
+    questionText.textContent = `What glass is used for ${currentQuestion.name}?`;
+    renderOptions(glassOptions, [currentQuestion.glass]);
   }
 
+  startTimer();
+  loadingScreen.style.display = 'none';
+  quizScreen.classList.remove('hidden');
+}
 
+function renderOptions(options, correctAnswers) {
+  optionContainer.innerHTML = '';
+  const shuffledOptions = shuffleArray([...options]);
+  shuffledOptions.forEach(option => {
+    const btn = document.createElement('button');
+    btn.classList.add('option-btn');
+    btn.textContent = option;
+    btn.addEventListener('click', () => handleAnswer(btn, correctAnswers.includes(option)));
+    optionContainer.appendChild(btn);
+  });
+}
 
-// Get ingredients from a cocktail object
-function extractIngredients(cocktail) {
-    const ingredients = [];
-    for (let i = 1; i <= 15; i++) {
-      const ingredient = cocktail[`strIngredient${i}`];
-      if (ingredient) ingredients.push(ingredient);
-    }
-    return ingredients;
-  }
-  
-  // Generate multiple choice options
-  function getUniqueGlassOptions(correctGlass) {
-    const incorrectGlasses = GLASS_TYPES.filter(g => g !== correctGlass);
-    const selected = [];
-  
-    while (selected.length < 3 && incorrectGlasses.length > 0) {
-      const randomIndex = Math.floor(Math.random() * incorrectGlasses.length);
-      selected.push(incorrectGlasses.splice(randomIndex, 1)[0]);
-    }
-  
-    return [...selected, correctGlass].sort(() => Math.random() - 0.5);
-  }
-  
-  // Generate a quiz question from cocktail data
-  async function generateCocktailQuestion() {
-    try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      const drink = data.drinks[0];
-  
-      const name = drink.strDrink;
-      const glass = drink.strGlass;
-      const ingredients = extractIngredients(drink);
-  
-      const questions = [];
-  
-      // Question 1: What ingredients are in [Cocktail Name]?
-      const shuffledIngredients = [...ingredients].sort(() => Math.random() - 0.5);
-      const fakeIngredients = ["Salt", "Sugar", "Milk", "Soda Water", "Coffee", "Tomato Juice", "Butter"];
-      const allOptions = [...shuffledIngredients.slice(0, 2), ...fakeIngredients.slice(0, 2)];
-      const mixedOptions = allOptions.sort(() => Math.random() - 0.5);
-  
-      questions.push({
-        type: "ingredients",
-        question: `Which of the following is used in a ${name}?`,
-        options: mixedOptions,
-        correctAnswer: shuffledIngredients[0],
-      });
-  
-      // Question 2: What glass is typically used for ${name}?
-      questions.push({
-        type: "glass",
-        question: `What glass is typically used for a ${name}?`,
-        options: getUniqueGlassOptions(glass),
-        correctAnswer: glass,
-      });
-  
-      // Question 3: What is the name of this cocktail? (Reverse)
-      const fakeNames = ["Sunset Breeze", "Velvet Hammer", "Twisted Lemon", "Tropical Kiss"];
-      const nameOptions = [...fakeNames.slice(0, 3), name].sort(() => Math.random() - 0.5);
-  
-      questions.push({
-        type: "name",
-        question: `Which cocktail contains these ingredients: ${ingredients.slice(0, 3).join(', ')}?`,
-        options: nameOptions,
-        correctAnswer: name,
-      });
-  
-      return questions;
-    } catch (error) {
-      console.error("Error fetching cocktail data:", error);
-      return [];
-    }
+function handleAnswer(button, isCorrect) {
+  clearInterval(timer);
+  const buttons = document.querySelectorAll('.option-btn');
+  buttons.forEach(btn => btn.disabled = true);
+
+  if (isCorrect) {
+    button.classList.add('correct');
+    score++;
+  } else {
+    button.classList.add('wrong');
+    const correctBtn = [...buttons].find(btn => currentQuestion.correctIngredients.includes(btn.textContent) || btn.textContent === currentQuestion.glass);
+    if (correctBtn) correctBtn.classList.add('correct');
   }
 
+  scoreDisplay.textContent = `Score: ${score}`;
+  nextBtn.style.display = 'inline-block';
+  totalTime += timePerQuestion - parseInt(timerDisplay.textContent.replace('Time: ', '').replace('s', ''));
+}
 
-
-  //Start timer
 function startTimer() {
-    clearInterval(gameTimer);
-    gameTimer = setInterval(() => {
-      timeRemaining--;
-      updateTimer();
-      
-      if (timeRemaining <= 0) {
-        clearInterval(timer);
-        timeUp();
-      }
-    }, 1000);
-  }
-  
-  // timer display
-  function updateTimer() {
-    gameTimer.textContent = `Time: ${timeRemaining}s`;
-    if (timeRemaining <= 5) {
-      gameTimer.style.color = 'red';
-    } else {
-      gameTimer.style.color = 'green';
-    }
-  }
-  
-  // Handle time up
-  function timeUp() {
-    const options = document.querySelectorAll('.option-button');
-    options.forEach(option => {
-      option.disabled = true;
-    });
-    nextButton.style.display = 'block';
-  }
-  
-  // Handle answer selection
-  function selectAnswer(selectedAnswer) {
-    clearInterval(gameTimer);
-    const question = questions[currentQuestionIndex];
-    const options = document.querySelectorAll('.option-btn');
-    
-    options.forEach(option => {
-      option.disabled = true;
-      
-      if (option.textContent === question.correctAnswer) {
-        option.classList.add('correct');
-      } else if (option.textContent === selectedAnswer && selectedAnswer !== question.correctAnswer) {
-        option.classList.add('wrong');
-      }
-    });
-    
-    if (selectedAnswer === question.correctAnswer) {
-      score += hintUsed ? 5 : 10; // removes points if hint option is used
-    }
-    
-    gameScore.textContent = `Score: ${score}`;
-    nextButton.style.display = 'block';
-  }
-  
-  // Show hint
-  function showHint() {
-    if (hintUsed) return;
-    
-    const question = questions[currentQuestionIndex];
-    const options = document.querySelectorAll('.option-btn');
-    
-    // Remove two incorrect options
-    let removed = 0;
-    options.forEach(option => {
-      if (removed < 2 && 
-          option.textContent !== question.correctAnswer && 
-          !option.classList.contains('disabled-hint')) {
-        option.style.visibility = 'hidden';
-        option.classList.add('disabled-hint');
-        removed++;
-      }
-    });
-    
-    hintUsed = true;
-  }
-  
-  // Next question
-  function nextQuestion() {
-    currentQuestionIndex++;
-    
-    if (currentQuestionIndex < questions.length) {
-      showQuestion();
-    } else {
-      showResults();
-    }
-  }
-  
-  // Show results
-  function showResults() {
-    totalTimeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
-    totalScore.textContent = `Final score: ${score}/${questions.length * 10}`;
-    totalTimeTaken.textContent = `Total time: ${totalTime} seconds`;
-    
-    quizScreen.classList.add('hidden');
-    resultScreen.classList.remove('hidden');
-  }
-  
-  // Restart the questions
-  function restartQuiz() {
-    startQuiz();
-  }
-  
-  // Go to main menu
-  function goToMainMenu() {
-    resultScreen.classList.add('hidden');
-    homeScreen.classList.remove('hidden');
-  }
+  let timeLeft = timePerQuestion;
+  timerDisplay.textContent = `Time: ${timeLeft}s`;
+  timerDisplay.style.color = 'green';
 
+  timer = setInterval(() => {
+    timeLeft--;
+    timerDisplay.textContent = `Time: ${timeLeft}s`;
+    if (timeLeft <= 5) {
+      timerDisplay.style.color = 'red';
+    }
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      timerDisplay.textContent = 'Time: 0s';
+      handleNextQuestion();
+    }
+  }, 1000);
+}
+
+function resetState() {
+  nextBtn.style.display = 'none';
+  optionContainer.innerHTML = '';
+  hintBtn.disabled = false;
+  hintBtn.style.display = 'inline-block';
+}
+
+function showHint() {
+  if (hintUsed) return;
+  const options = document.querySelectorAll('.option-btn');
+  let removed = 0;
+
+  options.forEach(option => {
+    if (removed < 2 && !currentQuestion.correctIngredients.includes(option.textContent) && option.textContent !== currentQuestion.glass) {
+      option.style.visibility = 'hidden';
+      removed++;
+    }
+  });
+
+  hintUsed = true;
+  hintBtn.disabled = true;
+}
+
+function restartQuiz() {
+  resultScreen.classList.add('hidden');
+  score = 0;
+  totalTime = 0;
+  questionCount = 0;
+  startQuiz();
+}
+
+function getIngredients(drink) {
+  let ingredients = [];
+  for (let i = 1; i <= 15; i++) {
+    const ing = drink[`strIngredient${i}`];
+    if (ing) ingredients.push(ing);
+  }
+  return ingredients;
+}
+
+function getRandomIngredient() {
+  const commonIngredients = ['Vodka', 'Gin', 'Tequila', 'Whiskey', 'Rum', 'Orange Juice', 'Cranberry Juice', 'Lime', 'Mint', 'Triple Sec'];
+  return commonIngredients[Math.floor(Math.random() * commonIngredients.length)];
+}
+
+function generateFakeGlasses() {
+  const glassTypes = ['Highball glass', 'Martini Glass', 'Old-fashioned glass', 'Hurricane glass', 'Champagne flute', 'Collins Glass'];
+  return shuffleArray(glassTypes.filter(g => g !== currentQuestion.glass)).slice(0, 3);
+}
+
+function shuffleArray(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
+function handleNextQuestion() {
+  loadQuestion();
+}
+
+function showResults() {
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+  totalScore.textContent = `Your Score: ${score}`;
+  totalTimeTaken.textContent = `Total Time: ${totalTime} seconds`;
+
+  const highScore = localStorage.getItem('highScore') || 0;
+  if (score > highScore) {
+    localStorage.setItem('highScore', score);
+  }
+  highScoreDisplay.textContent = `High Score: ${localStorage.getItem('highScore')}`;
+}
