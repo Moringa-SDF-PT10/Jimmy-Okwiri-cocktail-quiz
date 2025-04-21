@@ -59,7 +59,7 @@ explorer.exe index.html
 ## 🎯 Features
 
 -  **Start-to-finish quiz flow** with a splash screen, quiz rounds, and results
-- 🧠 **Multiple question types**: Guess the ingredients, glass type, or name of the cocktail
+- 🧠 **Multiple question types**: Guess the ingredients, glass type, name of the cocktail or Alcoholic or Non-Alcoholic
 - ⏱️ **Timer-based gameplay** with time pressure to keep you on your toes
 - 💡 **Hint system** to eliminate wrong options (but at a score cost!)
 -  **Final results screen** with score high score and Total time summary
@@ -71,12 +71,13 @@ explorer.exe index.html
 
 1. Clicks **Start Quiz** to start the game.
 2. App fetches random cocktail data from the CocktailDB API
-3. Generates 3 types of questions per cocktail:
+3. Generates 4 types of questions categories:
    - Guess the **ingredient**
    - Guess the **glass type**
    - Guess the **cocktail name**
+   - Guess if the drink is **Alcoholic** or **Non-Alcoholic**
 4. Player selects answers within a 15-second timer or the it will automatically move to the next question.
-5. Player may use **hint** which removes 2 wrong answers after being used leaving 2 0r 3 answers to choose from.
+5. Player may use **hint** which removes 2 wrong answers after being used leaving 2 or 3 answers to choose from.
 6. Final score , high score and total time taken are displayed on completion
 
 
@@ -91,7 +92,7 @@ explorer.exe index.html
 |![](./assets/quiz-screen.png)|
 
 
-|Results|
+|Results Screen|
 |---------|
 |![](./assets/results.png) |
 ---
