@@ -3,7 +3,7 @@
 
 Welcome to **Know Your Cocktails Drinks**, a fun and interactive Single Page Application (SPA) quiz game that tests your knowledge about cocktail drinks! 
 
-Built using HTML,  CSS and JavaScript this game fetches real-time cocktail data from [TheCocktailDB API](https://www.thecocktaildb.com/api.php).
+Built using HTML,  CSS and JavaScript. This game fetches real-time cocktail data from [TheCocktailDB API](https://www.thecocktaildb.com/api.php).
 
 ## Folder Structure
 
